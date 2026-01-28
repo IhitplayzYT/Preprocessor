@@ -1,22 +1,15 @@
+#[warn(non_camel_case_types,non_snake_case,non_upper_case_globals)]
 mod util;
 mod lib;
 mod PrerustC;
-use std::{env, process::exit,fs};
-
-use crate::util::util::open_file;
+use std::env;
 fn main() {
     let arg: Vec<String> = env::args().collect();
     if arg.len() != 2{
         return;
     }
-    let tokens = open_file(&arg[1]).unwrap();
-    let l = tokens.len();
-
-    let mut scope = 0;
-    let mut ret: Vec<String> = Vec::new();
-
-
-        
-
-
+    let fname = &arg[1][..];
+    let mut PREPROC = PrerustC::Preprocess::Prerustc::new(fname).unwrap();
+    PREPROC.process().unwrap();
+    PREPROC.print();
 }

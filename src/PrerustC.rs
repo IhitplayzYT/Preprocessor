@@ -1,9 +1,8 @@
+#[warn(non_camel_case_types,non_snake_case,non_upper_case_globals)]
 pub mod Preprocess{
-use std::fmt::format;
-
 use crate::{util::util::{open_file,get_h},lib::preprocessor::{ParserReturn,ParserError}};
 
-struct Prerustc{
+pub struct Prerustc{
 pub tok_c: Vec<String>,
 pub tok_h: Vec<String>,
 pub ret_tok_c: Vec<String>,
@@ -14,69 +13,101 @@ impl Prerustc{
 pub fn new(fname :  &str) -> ParserReturn<Self>{
 let tok_c = open_file(fname).unwrap();
 let tok_h = open_file(&get_h(fname)).unwrap();
-let (l_c,l_h) = (tok_c.len(),tok_h.len()));
+let (l_c,l_h) = (tok_c.len(),tok_h.len());
     Ok(Self{tok_c,tok_h,ret_tok_c:vec!["".to_string();l_c],ret_tok_h:vec!["".to_string();l_h]})
 }
 
 
-
-//  There is riuntime modification of iterable when im iterating over it best modify the code to work with ret_arr FIXME:
-// There may also be a  chance that the tokens we searching for are inside a token FIXME: 
-// Also accomodate the shift FIXME:
+// FIXME: Check if in all the fxn we simply assigning to the idx = "" instead of pushing
 pub fn process(&mut self) ->  ParserReturn<()>{
 let l = self.tok_c.len();
 let mut scope = 0;
 let mut i = 0;
 while i < l{
+self.print();
 match &self.tok_c[i][..]{
 "defer" => {
-    self.ret_tok_c.push(self.tok_c[i].clone());
-    self.eval_Defer(scope,i)?;
+    i += self.eval_Defer(scope,i)?;
 },
-"@autowired" => {
-self.ret_tok_c.push(self.tok_c[i].clone());
-self.eval_Autowired(i)?;
+"@Autowired" => {
+    i += self.eval_Autowired(i)?;
 },
 "{" => {
-    self.ret_tok_c.push(self.tok_c[i].clone());
+    self.ret_tok_c.insert(i,self.tok_c[i].clone());
     scope += 1 
 },
 "}" => {
-    self.ret_tok_c.push(self.tok_c[i].clone());
+    self.ret_tok_c.insert(i,self.tok_c[i].clone());
     scope -=1;
 }
 "?." => {
-    self.ret_tok_c.push(self.tok_c[i].clone());
-    let ret = self.eval_nullaccess(i)?;
+    i += self.eval_nullaccess(i)?;
 },
 "??=" => {
-    self.ret_tok_c.push(self.tok_c[i].clone());
-    self.eval_nullcoalese(i)?;
+    i += self.eval_nullcoalese(i)?;
 }
 _ => {
+    if self.tok_c[i].contains("defer"){
+        i += self.eval_Defer(scope, i)?;
+    }else if self.tok_c[i].contains("@Autowired"){
+        i += self.eval_Autowired(i)?;
+    }else if self.tok_c[i].contains("?."){
+        i += self.eval_nullaccess(i)?;
+    }else if self.tok_c[i].contains("??="){
+        i += self.eval_nullcoalese(i)?;
+    }else{
+        i += 1;
+        self.ret_tok_c.insert(i,self.tok_c[i].clone());
+    }
 
-    self.ret_tok_c.push(self.tok_c[i].clone());
 /*  Make sure to also deal with those cases where the tokens may be part of another token */
 
 },
 }
 
-i += 1;
 }
 
 Ok(())
 }
 // Might require a TT macro or regex
-fn eval_nullaccess(&mut self,idx:usize) -> ParserReturn<()>{
 
 
-Ok(())
+// Potential replace with x?.y?.z?.a   with x && x->y && x->y->z && x->y->z->a ? x->y->z->a:NULL
+
+fn eval_nullaccess(&mut self,idx:usize) -> ParserReturn<usize>{
+let mut buff = "".to_string();
+let mut tidx = self.tok_c[idx].find("?.").unwrap();
+let mut i = idx;
+while tidx >= 0 && tidx != usize::MAX && self.tok_c[tidx] != " " || self.tok_c[tidx] != "=" {
+    tidx -= 1;
+}
+tidx += 1;
+if !self.tok_c[idx].ends_with(";"){
+    self.tok_c[idx] += ";";
+    i+=1;
+}
+let mut curr = "".to_string();
+let inter:Vec<&str> = self.tok_c[idx][tidx..].split("?.").collect();
+for z in inter{
+    curr += z;
+    buff.push_str(&curr[..]);
+    buff.push_str(" && ");
+    curr += "->"
+}
+curr.pop();
+curr.pop();
+buff.pop();
+buff.pop();
+buff.pop();
+buff += &format!("? {} : NULL; // <PreRustC: Nullaccess>",buff)[..];
+self.ret_tok_c.insert(i, buff);
+Ok(i)
 }
 
 // We can return shift so that we can accordingly modify the iteration;
 fn eval_nullcoalese(&mut self,idx:usize) -> ParserReturn<usize>{
 let mut buff = "".to_string();
-let mut i = idx - 1;
+let mut i = idx;
 while !self.tok_c[i].contains(";"){
     i += 1;
     buff += &self.tok_c[i][..];
@@ -84,10 +115,10 @@ while !self.tok_c[i].contains(";"){
 
 let L = buff.find("??=").unwrap();
 let R = buff.find(";").unwrap();
-let expr = buff[(L+1)..R].to_string();
+let expr = buff[(L+4)..R].to_string(); // L+3+1 -> 3 is for moving over the ??= and 1 is for starting at the next char
 buff = buff.replace("??=", &format!("=(!{expr})?NULL:")[..]);
 self.ret_tok_c.insert(idx, buff);
-Ok()  //TODO:
+Ok(i)  
 }
 
 fn eval_Defer(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
@@ -108,8 +139,7 @@ fn eval_Defer(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
     for j in k..l{ 
         if self.tok_c[j] == "{" {
             scope += 1;
-        }
-                
+        }           
         if self.tok_c[j] == "}"{
             scope -= 1;
         }
@@ -122,72 +152,47 @@ Ok(0)
 }
 
 
-/// Try doing a ctrl+c + ctrl+v method like example struct sample ** txt; 
-/// we can replace (;,"with our gibberish") and to get name and type it be easy by simply find rindex of * and hence splicing
-/// Be on lookpout for the buffer since here structsample is inavlid so make sure if struct we add " "
-/// 
-
 fn eval_Autowired(&mut self,start:usize) -> ParserReturn<usize> {
-let mut var_type = self.tok_c[start+1].trim().to_string();
-if &var_type[..] == "struct"{
-    var_type += " ";
+let mut i = start;
+let mut buff = "".to_string();
+while !self.tok_c[i].contains(";"){
+if self.tok_c[i].contains("struct"){
+buff += " ";
 }
-let mut i = start+1;
-
-'br : while !self.tok_c[i].contains(";"){
-        i += 1;
-        if !self.tok_c[i].contains("*"){
-            var_type += " ";
-            var_type += &self.tok_c[i][..];
-        }else{
-            for k in self.tok_c[i].chars(){
-                match k {
-                    '*' => {var_type.push(k);},
-                    ' ' => var_type.push(k),
-                    _ => {
-                         break 'br;
-                    }
-                }
-            }
-        }
-    }
-//  i is pointing to ; or var;
-
-let var_type = var_type.trim().to_string();
-let mut malloc_sz = var_type.clone();
-malloc_sz.pop(); // Since size has one less '*'
-while self.tok_c[i].contains(';') {
-    i+=1;
+i += 1;
 }
-
-let mut var_name;
-if self.tok_c[i].len() == 1 && self.tok_c[i] == ";" {
-    i -= 1;
+if !buff.ends_with(";"){
+buff.push(';');
 }
-    var_name = self.get_name(&self.tok_c[i][..]).trim().to_string();
-    if var_name.ends_with(';') {var_name = var_name.replace(";","");}
-    if var_name.starts_with("**") {var_name = var_name.replace("**","");}
-    if var_name.starts_with("*") {var_name = var_name.replace("*","");}
-
-/*   Accordingly modify tokens in Tok_c */
-
-if self.tok_c[i] == ";"{
-self.tok_c.remove(i);
+let ridx = buff.rfind("*").unwrap();
+let var_name = buff[(ridx+1)..].to_string();
+let malloc_sz = buff[..ridx].to_string();
+let var_type = buff[..(ridx+1)].to_string();
+self.ret_tok_c.insert(i,
+format!(" = ({var_type} )malloc(sizeof({malloc_sz})); // <PreRustC: @AutoWired> 
+\nif (!{var_name})\n
+\t{{ free({var_name});exit(-1); }}"
+));
+buff.pop();
+self.ret_tok_c.insert(i, buff);
+    Ok(i)
 }
-else if self.tok_c[i].ends_with(";"){
-    self.tok_c[i].pop();
-}
-
-self.tok_c.insert(i, format!("=({var_type} )malloc(sizeof({malloc_sz})); // <PreRustC: @AutoWired> \nif (!{var_name}) {{ free({var_name});exit(-1); }}"));
-Ok(())
-}
-
-
 
 fn get_name(&self, z: &str) -> String {
 z.rsplit(|c| c == ' ' || c == '*')
 .next().unwrap_or("").to_string()
 }
+
+pub fn print(&self) {
+
+for i in &self.ret_tok_c {
+if i.contains(";"){
+    println!(" {i} ");
+}
+    print!(" {i} ");
+}
+}
+
 
 
 
