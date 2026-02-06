@@ -1,6 +1,6 @@
-#[warn(non_camel_case_types,non_snake_case,non_upper_case_globals)]
+#[warn(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_imports,dead_code)]
 mod util;
-mod lib;
+mod errors;
 mod c;
 mod h;
 mod Preprocessor_Struct;

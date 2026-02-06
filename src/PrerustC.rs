@@ -1,6 +1,6 @@
-#[allow(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_features,unused_imports)]
+#[allow(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_features,unused_imports,dead_code)]
 pub mod Preprocess{
-use crate::{h::MAP, lib::preprocessor::{ParserError, ParserReturn}, util::util::{get_h, open_file}};
+use crate::{h::MAP, errors::preprocessor::{ParserError, ParserReturn}, util::util::{get_h, open_file}};
 use crate::{c::*,h,Preprocessor_Struct::Prerustc};
 
 
@@ -15,23 +15,24 @@ let (l_c,l_h) = (tok_c.len(),tok_h.len());
 
 pub fn process(&mut self) ->  ParserReturn<()>{
 let l = self.tok_h.len();
-let mut scope = 0;
 let mut i = 0;
-while i < l {
 
-if self.tok_h[i].contains("<") && self.tok_h[i].contains(">") {
+while i < l {
+if self.tok_h[i].contains("<") && self.tok_h[i].contains(">") && !self.tok_h[i].starts_with("<"){
     i += self.def_generic(i)?;
 }else{
 self.ret_tok_h.insert(i, self.tok_h[i].clone());
-}
 i += 1;
 }
-
-print!("{:?}\n{:?}\n",self.ret_tok_h,MAP.read().unwrap());
+}
 
 let l = self.tok_c.len();
 let mut scope = 0;
 let mut i = 0;
+
+
+// NOTE  TILL HERE NO ERROR SO BASICALLY .h file PARSING IS DONE :)
+
 while i < l {
 
 match &self.tok_c[i][..]{

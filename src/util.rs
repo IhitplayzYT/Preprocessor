@@ -1,4 +1,4 @@
-#[warn(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_imports)]
+#[warn(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_imports,dead_code)]
 pub mod util {
 use std::cmp::{min,max};
 use std::{fs, io};

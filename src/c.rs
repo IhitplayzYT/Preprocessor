@@ -1,6 +1,6 @@
 #[allow(unused_imports,non_snake_case,non_camel_case_types,dead_code)]
 use crate::Preprocessor_Struct::Prerustc;
-use crate::lib::preprocessor::*;
+use crate::errors::preprocessor::*;
 
 impl Prerustc{
 
