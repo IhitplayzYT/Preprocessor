@@ -114,12 +114,11 @@ impl Prerustc{
         let type_var = &self.tok_c[i][(self.tok_c[i].find("<").unwrap()+1)..self.tok_c[i].find(">").unwrap()];
         let t = name.clone() + "_" + type_var;
         if contains_s(&t[..]) {
-            /*  Do the replacy thing */
             let mut elem = self.tok_c[i][..].to_string();
             elem = elem.replace("<", "_");
             elem = elem.replace(">","");
-            self.ret_tok_c.insert(i, elem);
-            return Ok(1);
+            self.ret_tok_c.insert(i, elem.clone());
+            return Ok(1 + if elem.contains(";") {0} else {1});
         }else{
             add_s(&t[..]);
         }
@@ -133,6 +132,7 @@ impl Prerustc{
         }
         template = template.replace("<T>",&(name+"_"+type_var)[..]);
         template = template.replace("T",type_var);
+
         self.ret_tok_h.push(template);        
 
             let mut elem = self.tok_c[i][..].to_string();
