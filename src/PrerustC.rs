@@ -31,9 +31,8 @@ let mut scope = 0;
 let mut i = 0;
 
 
-// NOTE  TILL HERE NO ERROR SO BASICALLY .h file PARSING IS DONE :)
 
-while i < l {
+while i < self.tok_c.len() {
 
 match &self.tok_c[i][..]{
 "defer" => {println!("defer");i += self.eval_Defer(scope,i)?;},

@@ -123,6 +123,7 @@ impl Prerustc{
             add_s(&t[..]);
         }
         let mut template = get_value(&name[..]).unwrap();
+
         if template.is_empty() {
             name = "struct ".to_string() + &name[..];
             template = get_value(&name[..]).unwrap();

@@ -16,7 +16,7 @@ let mut buff = self.tok_c[idx].to_string();
 if !f {
     buff.pop();
 }
-self.ret_tok_c.insert(idx, buff + &format!("={val}")[..] + ";"+"/* PreRustC CppInit */");
+self.ret_tok_c.insert(idx, buff + &format!("={val}")[..] + ";"+"/* PreRustC: CppInit */");
 Ok(1 + (f as usize))    
 }
 
@@ -46,9 +46,8 @@ buff.pop();
 buff.pop();
 buff.pop();
 
-buff += &format!(" ? {} : NULL){} /* <PreRustC: Nullaccess> */ ",curr,if f {";"} else {""})[..];
+buff += &format!(" ? {} : NULL){} /* PreRustC: Nullaccess */ ",curr,if f {";"} else {""})[..];
 self.ret_tok_c.insert(i, buff);
-println!("{:?} {:?} {:?}",i,f,idx);
 Ok(1)
 }
 
@@ -72,15 +71,17 @@ var = self.tok_c[idx - 1].clone();
 
 let R = buff.find(";").unwrap();
 let expr = buff[L..R].to_string(); 
-println!("||{buff} {} {L} {R}",expr);
 // L+3+1 -> 3 is for moving over the ??= and 1 is for starting at the next char
 let expr = &expr[4..][..];
 buff = buff.replace("??=", &format!("= ( {var} ) ? {var} : {expr}")[..]);
-self.ret_tok_c.insert(idx, buff+" /* <PreRustC: Null Coalese> */");
+self.ret_tok_c.insert(idx, buff+" /* PreRustC: Null Coalese */");
 Ok(1)  
 }
 
-// TODO: FIX DEFER[FIXME: Possible soln is store all defer var and idx in array and at the end place them ]
+
+// TODO: FIX DEFERFIXME: Also look for early exit via return
+// KILLER IDEA we find every return and also the scope end and instead of adding to the array we simply
+// modify the token in tok_c to have the defer command run before them
 pub fn eval_Defer(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
     let mut scope = scope;
     let z = scope;
@@ -97,24 +98,31 @@ pub fn eval_Defer(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
         
     }
     for j in k..l{ 
+                   
+        if let Some(_) = self.tok_c[j].find("return"){
+            println!("help := {} {:?} {}",j,self.tok_c[j],name);
+            self.tok_c[j] = format!("free({}); /* PreRustC: Defr */ ",name) + &self.tok_c[j];
+        }
         if self.tok_c[j] == "{" {
             scope += 1;
-        }           
+        }
         if self.tok_c[j] == "}"{
             scope -= 1;
         }
-        if scope < z{
-            self.ret_tok_c.insert(j, format!("free({}); /* <PreRustC: Defer> */",name));
+        if scope < z{   
+            self.tok_c[j] = format!("free({}); /* PreRustC: Defr */",name) + &self.tok_c[j];
+            println!("wikth the brack ?? :{:?}",self.tok_c[j]);
             break;
         } 
     }
+println!("pls={:?}",self.tok_c);
 Ok(2)
 }
 
 pub fn eval_Deferc(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
     let mut scope = scope;
     let z = scope;
-
+    let l = self.tok_c.len();
    let mut idx = i; 
    let mut buff = "".to_string();
     while !self.tok_c[idx].contains(";"){
@@ -122,8 +130,10 @@ pub fn eval_Deferc(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
         idx += 1;
     }
     buff += &self.tok_c[idx][..];
-    let l = self.tok_c.len();
     for j in i..l{ 
+        if let Some(_) = self.tok_c[j].find("return"){
+            self.tok_c[j] = format!("{} /* PreRustC: DefrC */",buff) + &self.tok_c[j];
+        }
         if self.tok_c[j] == "{" {
             scope += 1;
         }           
@@ -131,7 +141,7 @@ pub fn eval_Deferc(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
             scope -= 1;
         }
         if scope < z{
-            self.ret_tok_c.insert(j, format!("{buff} /* <PreRustC: Defer> */"));
+            self.tok_c[j] = format!("{} /* PreRustC: DefrC */",buff) + &self.tok_c[j];
             break;
         } 
     }
@@ -154,6 +164,7 @@ buff += &self.tok_c[i][..];
 if !buff.ends_with(";"){
 buff.push(';');
 }
+
 let ridx = buff.rfind("*").unwrap();
 let col_idx = buff.rfind(";").unwrap();
 let var_name = buff[(ridx+1)..col_idx].to_string();
@@ -161,7 +172,7 @@ let malloc_sz = buff[..ridx].to_string();
 let var_type = buff[..(ridx+1)].to_string();
 buff.pop();
 self.ret_tok_c.insert(i, buff + 
-    &format!(" = ({var_type} )malloc(sizeof({malloc_sz})); /* <PreRustC: @AutoWired> */ \nif (!{var_name}){{ \n  free({var_name});\n  exit(-1); \n}}\n")[..]
+    &format!(" = ({var_type} )malloc(sizeof({malloc_sz})); /* PreRustC: AutoWired */ \nif (!{var_name}){{ \n  free({var_name});\n  exit(-1); \n}}\n")[..]
 );
 Ok(i-start+1)
 }
