@@ -1,29 +1,31 @@
-#[allow(unused_imports, non_snake_case, non_camel_case_types, dead_code)]
 use crate::Preprocessor_Struct::Prerustc;
-use std::{env, fs::{self, File},path::Path};
+use crate::util::util::get_h;
+use std::{env, fs::{self},path::Path};
+#[allow(unused_imports, non_snake_case, non_camel_case_types,dead_code)]
 impl Prerustc {
-    fn build(&self) -> bool {
+    pub fn build(&self) -> bool {
         let (c_txt, h_txt) = self.fmt_Tok();
         true
     }
 
-    fn fmt_Tok(&self) -> (String, String) {
+    pub fn fmt_Tok(&self) -> (String, String) {
         let mut c_buff = "".to_string();
         for i in &self.ret_tok_c {
             if i == "" {
                 continue;
             }
             let ed = i.bytes().last().unwrap();
+            c_buff += i;
             match ed {
-                b';' | b'}' => {
+                b';' | b'{' |  b'}' | b'/' | b'>' | b'\'' | b'\"'=> {
                     c_buff += "\n";
                 }
                 _ => {
                     c_buff += " ";
                 }
             }
-            c_buff += i;
         }
+
         let mut h_buff = "".to_string();
         for i in &self.ret_tok_h {
             if i == "" {
@@ -31,7 +33,7 @@ impl Prerustc {
             }
             let ed = i.bytes().last().unwrap();
             match ed {
-                b';' | b'}' => {
+                b';' | b'}' | b'>' | b'/' => {
                     h_buff += "\n";
                 }
                 _ => {
@@ -45,24 +47,55 @@ impl Prerustc {
 
 
     // TODO: Decide if we neede . temp files for storring old processed code ??
-    fn create(&self, tempfname: String, text: String) -> std::io::Result<bool,> {
-        let dir = env::current_dir()?;
-        let dir = dir.join(Path::new(&tempfname[..]));
-        let file;
-        if let Ok(x) = fs::exists(dir.as_path()){
-            if !x{ 
-                fs::File::create_new(dir.as_path())?;
-            }
+    // Args -> sample.c
+
+    //Output -> sample.c sample.h .sample.c .sample.h
+
+    fn create(&self, cfname: String, text_c: String,text_h: String) -> std::io::Result<bool> {
+        let tempcfname = ".".to_string() + &cfname[..];
+        let temphfname = get_h(&tempcfname[..]);
+        let hfname = get_h(&cfname[..]);
+
+        let cwd = env::current_dir()?;        
+
+        let (c_path,h_path,ct_path,ht_path) = (
+        cwd.join(Path::new(&cfname)),
+        cwd.join(Path::new(&hfname)),
+        cwd.join(Path::new(&tempcfname)),
+        cwd.join(Path::new(&temphfname))
+        );
+
+        if let Ok(x) = fs::exists(&c_path){
+        if !x{
+        fs::File::create_new(&c_path)?;
         }
-        file = fs::File::open(dir)?;
+        }
+        if let Ok(x) = fs::exists(&h_path){
+        if !x{
+        fs::File::create_new(&h_path)?;
+        }
+        }
+        if let Ok(x) = fs::exists(&ct_path){
+        if !x{
+        fs::File::create_new(&ct_path)?;
+        }
+        }
+        if let Ok(x) = fs::exists(&ht_path){
+        if !x{
+        fs::File::create_new(&ht_path)?;
+        }
+        }
+
+        let buff: String = fs::read_to_string(&c_path)?;
+        fs::write(ct_path, buff)?;
+        let buff: String = fs::read_to_string(&h_path)?;
+        fs::write(ht_path, buff)?;       
+        fs::write(c_path,text_c)?;
+        fs::write(h_path,text_h)?;
 
         Ok(true)
 
     }
 
-// FIXME: If we decided no then we dont need this    
-    fn swap(&self, f1: String, f2: String) -> bool {
 
-        true
-    }
 }

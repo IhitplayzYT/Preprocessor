@@ -131,8 +131,11 @@ impl Prerustc{
                 return Ok(1);
             }
         }
-        template = template.replace("<T>",&(name+"_"+type_var)[..]);
-        template = template.replace("T",type_var);
+        let (l_idx,r_idx) = (template.find("<").unwrap(),template.find(">").unwrap());
+        let s = template[l_idx..(r_idx+1)].to_string();
+        let r = template[(l_idx+1)..r_idx].to_string();
+        template = template.replace(&s,&("_".to_string()+type_var)[..]);
+        template = template.replace(&r,type_var);
 
         self.ret_tok_h.push(template);        
 

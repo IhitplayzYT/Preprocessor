@@ -21,7 +21,7 @@ Ok(1 + (f as usize))
 }
 
 pub fn eval_nullaccess(&mut self,idx:usize) -> ParserReturn<usize>{
-let mut buff = "(".to_string();
+let mut buff = "( ".to_string();
 let i = idx;
 let tidx = self.tok_c[idx].find('=').unwrap_or(self.tok_c[idx].find(' ').unwrap_or(0));
 buff += &self.ret_tok_c[idx][..tidx];
@@ -46,7 +46,7 @@ buff.pop();
 buff.pop();
 buff.pop();
 
-buff += &format!(" ? {} : NULL){} /* PreRustC: Nullaccess */ ",curr,if f {";"} else {""})[..];
+buff += &format!(") ? {} : NULL){} /* PreRustC: Nullaccess */ ",curr,if f {";"} else {""})[..];
 self.ret_tok_c.insert(i, buff);
 Ok(1)
 }
@@ -75,7 +75,7 @@ let expr = buff[L..R].to_string();
 let expr = &expr[4..][..];
 buff = buff.replace("??=", &format!("= ( {var} ) ? {var} : {expr}")[..]);
 self.ret_tok_c.insert(idx, buff+" /* PreRustC: Null Coalese */");
-Ok(1)  
+Ok(2)  
 }
 
 
@@ -100,8 +100,7 @@ pub fn eval_Defer(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
     for j in k..l{ 
                    
         if let Some(_) = self.tok_c[j].find("return"){
-            println!("help := {} {:?} {}",j,self.tok_c[j],name);
-            self.tok_c[j] = format!("free({}); /* PreRustC: Defr */ ",name) + &self.tok_c[j];
+            self.tok_c[j] = format!("free( {} ); /* PreRustC: Defr */ ",name) + &self.tok_c[j];
         }
         if self.tok_c[j] == "{" {
             scope += 1;
@@ -110,12 +109,10 @@ pub fn eval_Defer(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
             scope -= 1;
         }
         if scope < z{   
-            self.tok_c[j] = format!("free({}); /* PreRustC: Defr */",name) + &self.tok_c[j];
-            println!("wikth the brack ?? :{:?}",self.tok_c[j]);
+            self.tok_c[j] = format!("free( {} ); /* PreRustC: Defr */",name) + &self.tok_c[j];
             break;
         } 
     }
-println!("pls={:?}",self.tok_c);
 Ok(2)
 }
 
@@ -123,10 +120,11 @@ pub fn eval_Deferc(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
     let mut scope = scope;
     let z = scope;
     let l = self.tok_c.len();
-   let mut idx = i; 
+   let mut idx = i+1; 
    let mut buff = "".to_string();
     while !self.tok_c[idx].contains(";"){
         buff += &self.tok_c[idx][..];
+        buff += " ";
         idx += 1;
     }
     buff += &self.tok_c[idx][..];

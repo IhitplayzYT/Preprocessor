@@ -33,50 +33,39 @@ let mut i = 0;
 
 
 while i < self.tok_c.len() {
-
 match &self.tok_c[i][..]{
-"defer" => {println!("defer");i += self.eval_Defer(scope,i)?;},
-"deferc" => {println!("deferc");i += self.eval_Deferc(scope,i)?;},
-"@Autowired" => {println!("autowired");i += self.eval_Autowired(i)?;},
+"deferc" => {i += self.eval_Deferc(scope,i)?;},
+"defer" => {i += self.eval_Defer(scope,i)?;},
+"@Autowired" => {i += self.eval_Autowired(i)?;},
 "{" => {
-    println!("{{");
     self.ret_tok_c.insert(i,self.tok_c[i].clone());
     scope += 1;
     i += 1;
 },
 "}" => {
-    println!("}}");
     self.ret_tok_c.insert(i,self.tok_c[i].clone());
     scope -=1;
     i +=1;
 }
 
-"?." => {println!("?.");i += self.eval_nullaccess(i)?;},
-"??=" => {println!("??=");i += self.eval_nullcoalese(i)?;}
+"?." => {i += self.eval_nullaccess(i)?;},
+"??=" => {i += self.eval_nullcoalese(i)?;}
 _ => {
     if self.tok_c[i].contains("deferc"){
-        println!("deferc");
         i += self.eval_Deferc(scope, i)?;
     }
     else if self.tok_c[i].contains("defer"){
-        println!("defer");
         i += self.eval_Defer(scope, i)?;
     }else if !self.tok_c[i].starts_with("<") && (self.tok_c[i].contains("<") && self.tok_c[i].contains(">")){
         i += self.populate_generics(i)?;
     }
     else if self.tok_c[i].contains("@Autowired"){
-        println!("@autowired");
         i += self.eval_Autowired(i)?;
     }else if self.tok_c[i].contains("?."){
-        println!("?.");
         i += self.eval_nullaccess(i)?;
     }else if self.tok_c[i].contains("??="){
-        println!("??=");
         i += self.eval_nullcoalese(i)?;
-    }else if self.tok_c[i].contains("(") && self.tok_c[i].contains(")"){
-        i += self.eval_cppinit(i)?;
     }else{
-        println!("{:?}",self.tok_c[i]);
         self.ret_tok_c.insert(i,self.tok_c[i].clone());
         i += 1;
     }
