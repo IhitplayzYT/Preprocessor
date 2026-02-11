@@ -12,3 +12,9 @@
 <typedefed struct/normal struct> <*/**> <name>
 - Generics
 <typedefed struct/normal struct><type> <name>
+
+![](PreRustC.mp4)
+
+# Dependencies
+1. Cargo
+

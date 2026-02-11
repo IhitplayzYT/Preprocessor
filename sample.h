@@ -1,12 +1,20 @@
 typedef struct Details {
 struct inner * inner;
-}
-Details;
+} Details;
+
 struct inner{
 int* secret_key;
 };
+
+
+struct Student<U> {
+U uniqid;
+char ** name;
+Details *ds;
+};
+
 struct Employee{
 int eid;
 char ** name;
 };
-struct Student_int { int uniqid; char ** name; Details *ds;};
+
