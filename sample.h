@@ -1,24 +1,12 @@
-
-#include <algorithm>
-typedef struct Fullname{
-char * first;
-char * last;
-} Fullname;
-
-
-struct Student {
-Fullname name;
+typedef struct Details {
+struct inner * inner;
+}
+Details;
+struct inner{
+int* secret_key;
 };
-
-typedef struct Teacher<T> {
-T pid;
-char * name;
-} Teacher;
-
-struct Employee<U>{
-U empid;
-float z;
+struct Employee{
+int eid;
+char ** name;
 };
-
-
-int z;
+struct Student_int { int uniqid; char ** name; Details *ds;};

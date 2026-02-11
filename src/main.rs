@@ -20,8 +20,5 @@ fn main() {
     }
     let fname = &arg[1][..];
     let mut PREPROC = Preprocessor_Struct::Prerustc::new(fname).unwrap();
-    PREPROC.process().unwrap();
-    let (a,b) = PREPROC.fmt_Tok();
-    println!("{:?}\n\n{:?}",a,b);
-
+    PREPROC.build();
 }

@@ -9,7 +9,7 @@ pub fn new(fname :  &str) -> ParserReturn<Self>{
 let tok_c = open_file(fname).unwrap();
 let tok_h = open_file(&get_h(fname)).unwrap();
 let (l_c,l_h) = (tok_c.len(),tok_h.len());
-    Ok(Self{tok_c,tok_h,ret_tok_c:vec!["".to_string();l_c],ret_tok_h:vec!["".to_string();l_h]})
+    Ok(Self{tok_c,tok_h,ret_tok_c:vec!["".to_string();l_c],ret_tok_h:vec!["".to_string();l_h],c_fname:fname.to_string()})
 }
 
 

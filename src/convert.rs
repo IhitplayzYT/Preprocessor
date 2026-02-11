@@ -3,8 +3,10 @@ use crate::util::util::get_h;
 use std::{env, fs::{self},path::Path};
 #[allow(unused_imports, non_snake_case, non_camel_case_types,dead_code)]
 impl Prerustc {
-    pub fn build(&self) -> bool {
+    pub fn build(&mut self) -> bool {
+        self.process().unwrap();
         let (c_txt, h_txt) = self.fmt_Tok();
+        self.create(c_txt, h_txt).unwrap();
         true
     }
 
@@ -14,6 +16,7 @@ impl Prerustc {
             if i == "" {
                 continue;
             }
+            
             let ed = i.bytes().last().unwrap();
             c_buff += i;
             match ed {
@@ -32,15 +35,15 @@ impl Prerustc {
                 continue;
             }
             let ed = i.bytes().last().unwrap();
+            h_buff += i;
             match ed {
-                b';' | b'}' | b'>' | b'/' => {
+                b';' | b'{' | b'\'' | b'\"' |  b'}' | b'>' | b'/' => {
                     h_buff += "\n";
                 }
                 _ => {
                     h_buff += " ";
                 }
             }
-            h_buff += i;
         }
         (c_buff, h_buff)
     }
@@ -51,7 +54,8 @@ impl Prerustc {
 
     //Output -> sample.c sample.h .sample.c .sample.h
 
-    fn create(&self, cfname: String, text_c: String,text_h: String) -> std::io::Result<bool> {
+    fn create(&self,text_c: String,text_h: String) -> std::io::Result<bool> {
+        let cfname = self.c_fname.clone();
         let tempcfname = ".".to_string() + &cfname[..];
         let temphfname = get_h(&tempcfname[..]);
         let hfname = get_h(&cfname[..]);
