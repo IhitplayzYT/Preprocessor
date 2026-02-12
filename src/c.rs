@@ -175,5 +175,21 @@ self.ret_tok_c.insert(i, buff +
 Ok(i-start+1)
 }
 
+pub fn eval_foreach(&mut self,i:usize) -> ParserReturn<usize>{
+    if i+2 >= self.tok_c.len() || self.tok_c[i+2] != "in" {
+        return Err(ParserError::Foreach_err);
+    }
+
+let var = self.tok_c[i+1].clone();
+let iterator = self.tok_c[i+3].clone();
+let buff = format!("for (char* iter_var = {iterator};*iter_var;iter_var++){{\nchar {var} = *iter_var;\n");
+self.ret_tok_c.insert(i,buff);
+let mut jump = 0;
+let idx = i;
+while self.tok_c[idx+jump] != "{" || self.tok_c[idx+jump].ends_with("{") {jump +=1;}
+
+Ok(jump+1)
+} 
+
 
 }

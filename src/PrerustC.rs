@@ -46,10 +46,14 @@ match &self.tok_c[i][..]{
     self.ret_tok_c.insert(i,self.tok_c[i].clone());
     scope -=1;
     i +=1;
+},
+"for" => {
+if self.tok_c[i] == "in" {
+i += self.eval_foreach(i)?;
 }
-
+},
 "?." => {i += self.eval_nullaccess(i)?;},
-"??=" => {i += self.eval_nullcoalese(i)?;}
+"??=" => {i += self.eval_nullcoalese(i)?;},
 _ => {
     if self.tok_c[i].contains("deferc"){
         i += self.eval_Deferc(scope, i)?;

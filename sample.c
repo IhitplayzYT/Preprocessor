@@ -8,6 +8,13 @@ int main() {
 deferc printf("Thank you for executing");
 int b = 5;
 int a ??= b;
+
+for i in "hello" {
+
+
+}
+
+
 @Autowired
 struct Employee * emp;
 defer emp;

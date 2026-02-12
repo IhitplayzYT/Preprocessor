@@ -5,6 +5,7 @@ pub mod preprocessor {
 pub enum ParserError{
 Defer_err,
 Nullaccess_err,
+Foreach_err,
 }
 
 impl std::fmt::Display for ParserError{
