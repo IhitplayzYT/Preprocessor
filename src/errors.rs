@@ -6,6 +6,7 @@ pub enum ParserError{
 Defer_err,
 Nullaccess_err,
 Foreach_err,
+Customer_err(String),
 }
 
 impl std::fmt::Display for ParserError{

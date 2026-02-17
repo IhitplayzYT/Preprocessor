@@ -1,6 +1,9 @@
+use std::usize;
+
 #[allow(unused_imports,non_snake_case,non_camel_case_types,dead_code)]
 use crate::Preprocessor_Struct::Prerustc;
 use crate::errors::preprocessor::*;
+use crate::util::util;
 
 impl Prerustc{
 
@@ -191,5 +194,63 @@ while self.tok_c[idx+jump] != "{" || self.tok_c[idx+jump].ends_with("{") {jump +
 Ok(jump+1)
 } 
 
+pub fn eval_multi_assign(&mut self,i:usize)-> ParserReturn<usize>{
+    let mut idx = i;
+    let count = util::freq(&self.tok_c[i],b',');
+    if count > 1 && (i > 1 && !self.tok_c[i-1].contains("(")) && !self.tok_c[i].contains("("){ 
+        let mut buff = "".to_string();
+        let mut varibles : Vec<String> = self.tok_c[i].split(",").map(|x| {x.to_string()}).collect();
+        while !self.tok_c[i].contains("=") {
+            let (L,R) = (self.tok_c[idx].find(",").unwrap_or(usize::MAX),self.tok_c[idx].rfind(",").unwrap_or(usize::MAX));
+            if L == R && L != usize::MAX {
+                if L == 0 {
+                    varibles.push(self.tok_c[idx][(L+1)..].to_string());
+                }else{
+                    varibles.push(self.tok_c[idx][..R].to_string());
+                }                
+            }
+            idx += 1;
+        }
+        if self.tok_c[idx].len() == 1 {
+            idx += 1;
+        }
+
+        let mut vals:Vec<String> = self.tok_c[idx].split(",").map(|s| {s.to_string()}).collect();
+        
+        while !self.tok_c[i].contains(";") {
+            let (L,R) = (self.tok_c[idx].find(",").unwrap_or(usize::MAX),self.tok_c[idx].rfind(",").unwrap_or(usize::MAX));
+            if L == R && L != usize::MAX {
+                if L == 0 {
+                    vals.push(self.tok_c[idx][(L+1)..].to_string());
+                }else{
+                    vals.push(self.tok_c[idx][..R].to_string());
+                }                
+            }
+            idx += 1;
+        }
+
+        if vals.len() != varibles.len() {
+            return Err(ParserError::Customer_err("Invalid number of LHS & RHS".to_string()));
+        }
+
+        for (var,asgn) in varibles.iter().zip(vals){
+            buff += &format!(" {var}={asgn},");
+        }
+
+        buff.pop();
+        buff += ";"
+
+    }else{
+        self.ret_tok_c.insert(i, self.tok_c[i].clone());
+        return Ok(1);
+    }
+        
+
+    Ok(idx-i+1)
+    }
 
 }
+
+
+
+

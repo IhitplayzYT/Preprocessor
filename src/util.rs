@@ -1,4 +1,4 @@
-#[warn(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_imports,dead_code)]
+#[allow(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_imports,dead_code)]
 pub mod util {
 use std::cmp::{min,max};
 use std::{fs, io};
@@ -29,7 +29,15 @@ ret.push('h');
 ret
 }
 
-
+pub fn freq(s: &str,ch:u8) -> usize{
+let mut ret = 0;
+for i in s.bytes() {
+if i == ch {
+    ret += 1;
+}
+}
+ret
+}
 
 
 

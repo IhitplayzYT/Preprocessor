@@ -1,6 +1,6 @@
 #[allow(non_camel_case_types,non_snake_case,non_upper_case_globals,unused_features,unused_imports,dead_code)]
 pub mod Preprocess{
-use crate::{h::MAP, errors::preprocessor::{ParserError, ParserReturn}, util::util::{get_h, open_file}};
+use crate::{errors::preprocessor::{ParserError, ParserReturn}, h::MAP, util::util::{freq, get_h, open_file}};
 use crate::{c::*,h,Preprocessor_Struct::Prerustc};
 
 
@@ -26,7 +26,6 @@ i += 1;
 }
 }
 
-let l = self.tok_c.len();
 let mut scope = 0;
 let mut i = 0;
 
@@ -57,6 +56,9 @@ i += self.eval_foreach(i)?;
 _ => {
     if self.tok_c[i].contains("deferc"){
         i += self.eval_Deferc(scope, i)?;
+    }
+    else if freq(&self.tok_c[i], b',') > 1 {
+        i += self.eval_multi_assign(i)?;
     }
     else if self.tok_c[i].contains("defer"){
         i += self.eval_Defer(scope, i)?;
