@@ -22,4 +22,7 @@ fn main() {
     let fname = &arg[1][..];
     let mut PREPROC = Preprocessor_Struct::Prerustc::new(fname).unwrap();
     PREPROC.build();
+    if let Ok(x) = PREPROC.swap() {
+        println!("Ok!!");
+    }
 }

@@ -82,7 +82,6 @@ Ok(2)
 }
 
 
-// TODO: FIX DEFERFIXME: Also look for early exit via return
 // KILLER IDEA we find every return and also the scope end and instead of adding to the array we simply
 // modify the token in tok_c to have the defer command run before them
 pub fn eval_Defer(&mut self,scope: i32,i:usize) -> ParserReturn<usize>{
@@ -151,7 +150,6 @@ Ok(idx-i+1)
 
 
 
-// FIXME: Remove the // comment thingy if we use @Autowired
 pub fn eval_Autowired(&mut self,start:usize) -> ParserReturn<usize> {
 
 let mut i = start+1;
@@ -178,20 +176,19 @@ self.ret_tok_c.insert(i, buff +
 Ok(i-start+1)
 }
 
+
 pub fn eval_foreach(&mut self,i:usize) -> ParserReturn<usize>{
     if i+2 >= self.tok_c.len() || self.tok_c[i+2] != "in" {
         return Err(ParserError::Foreach_err);
     }
 
 let var = self.tok_c[i+1].clone();
-let iterator = self.tok_c[i+3].clone();
+let mut iterator = self.tok_c[i+3].clone();
+if iterator.ends_with("{"){iterator.pop().unwrap();}
+
 let buff = format!("for (char* iter_var = {iterator};*iter_var;iter_var++){{\nchar {var} = *iter_var;\n");
 self.ret_tok_c.insert(i,buff);
-let mut jump = 0;
-let idx = i;
-while self.tok_c[idx+jump] != "{" || self.tok_c[idx+jump].ends_with("{") {jump +=1;}
-
-Ok(jump+1)
+Ok(4+ if !self.tok_c[i+3].ends_with("{") { 1 } else { 0 })
 } 
 
 pub fn eval_multi_assign(&mut self,i:usize)-> ParserReturn<usize>{
@@ -200,7 +197,8 @@ pub fn eval_multi_assign(&mut self,i:usize)-> ParserReturn<usize>{
     if count > 1 && (i > 1 && !self.tok_c[i-1].contains("(")) && !self.tok_c[i].contains("("){ 
         let mut buff = "".to_string();
         let mut varibles : Vec<String> = self.tok_c[i].split(",").map(|x| {x.to_string()}).collect();
-        while !self.tok_c[i].contains("=") {
+        
+        while !self.tok_c[idx].contains("=") && !self.tok_c[idx].contains(";"){
             let (L,R) = (self.tok_c[idx].find(",").unwrap_or(usize::MAX),self.tok_c[idx].rfind(",").unwrap_or(usize::MAX));
             if L == R && L != usize::MAX {
                 if L == 0 {
@@ -211,13 +209,22 @@ pub fn eval_multi_assign(&mut self,i:usize)-> ParserReturn<usize>{
             }
             idx += 1;
         }
-        if self.tok_c[idx].len() == 1 {
-            idx += 1;
+        let l = varibles.len();
+
+        if varibles[l-1].ends_with(";") {
+            let csv = varibles.into_iter().reduce(|acc, s| acc + "," + &s).unwrap_or_default();
+            println!("{}",csv);
+            self.ret_tok_c[i-1].push_str(&csv[..]);
+            return Ok(idx - i+ 1);
         }
+        if varibles[l-1].ends_with("=") {
+            varibles[l-1].pop().unwrap();
+        }
+            idx += 1;
 
         let mut vals:Vec<String> = self.tok_c[idx].split(",").map(|s| {s.to_string()}).collect();
         
-        while !self.tok_c[i].contains(";") {
+        while !self.tok_c[idx].contains(";") {
             let (L,R) = (self.tok_c[idx].find(",").unwrap_or(usize::MAX),self.tok_c[idx].rfind(",").unwrap_or(usize::MAX));
             if L == R && L != usize::MAX {
                 if L == 0 {
@@ -228,6 +235,11 @@ pub fn eval_multi_assign(&mut self,i:usize)-> ParserReturn<usize>{
             }
             idx += 1;
         }
+        let l = vals.len();
+        if vals[l-1].ends_with(";") {
+            vals[l-1].pop().unwrap();
+        }
+            idx += 1;
 
         if vals.len() != varibles.len() {
             return Err(ParserError::Customer_err("Invalid number of LHS & RHS".to_string()));
@@ -238,7 +250,8 @@ pub fn eval_multi_assign(&mut self,i:usize)-> ParserReturn<usize>{
         }
 
         buff.pop();
-        buff += ";"
+        buff += ";";
+        self.ret_tok_c[i-1].push_str(&buff[..]);
 
     }else{
         self.ret_tok_c.insert(i, self.tok_c[i].clone());
@@ -246,7 +259,7 @@ pub fn eval_multi_assign(&mut self,i:usize)-> ParserReturn<usize>{
     }
         
 
-    Ok(idx-i+1)
+    Ok(idx-i)
     }
 
 }

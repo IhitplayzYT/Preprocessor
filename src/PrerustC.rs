@@ -47,7 +47,7 @@ match &self.tok_c[i][..]{
     i +=1;
 },
 "for" => {
-if self.tok_c[i] == "in" {
+if self.tok_c[i+2] == "in" {
 i += self.eval_foreach(i)?;
 }
 },
