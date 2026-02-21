@@ -13,7 +13,7 @@
 - Generics
 <typedefed struct/normal struct><type> <name>
 
-![Video](PreRustC.mp4)
+![Video](./PreRustC.gif)
 
 # Dependencies
 1. Cargo
